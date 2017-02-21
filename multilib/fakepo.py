@@ -4,13 +4,18 @@ class FakePackageObject(object):
     framework herein
     """
     def __init__(self, po=None, d=None):
-        # FPO's can be created from yum Package Objects or dictionaries
+        # FPO's can be created from yum/dnf Package Objects or dictionaries
         if po:
             self.name = po.name
             self.arch = po.arch
             self.provides = po.provides
             self.requires = po.requires
-            self.files = po.returnFileEntries()
+            try:
+                # yum
+                self.files = po.returnFileEntries()
+            except AttributeError:
+                # dnf
+                self.files = po.files
         elif d:
             self.name = d['name']
             self.arch = d['arch']

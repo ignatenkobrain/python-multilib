@@ -15,6 +15,15 @@ import os
 from fnmatch import fnmatch
 from six.moves import configparser
 
+def name_from_provides(provides):
+    try:
+        # yum
+        (p_name, p_flag, (p_e, p_v, p_r)) = provides
+    except TypeError:
+        # dnf
+        p_name = str(provides).split()[0]
+    return p_name
+
 class MultilibMethod(object):
     PREFER_64 = frozenset(
         ('gdb', 'frysk', 'systemtap', 'systemtap-runtime', 'ltrace', 'strace'))
@@ -27,7 +36,8 @@ class MultilibMethod(object):
             if po.name in self.PREFER_64:
                 return True
             if po.name.startswith('kernel'):
-                for (p_name, p_flag, (p_e, p_v, p_r)) in po.provides:
+                for prov in po.provides:
+                    p_name = name_from_provides(prov)
                     if p_name == 'kernel' or p_name == 'kernel-devel':
                         return True
         return False
@@ -74,7 +84,8 @@ class KernelMultilibMethod(object):
     def select(self, po):
         if po.arch.find('64') != -1:
             if po.name.startswith('kernel'):
-                for (p_name, p_flag, (p_e, p_v, p_r)) in po.provides:
+                for prov in po.provides:
+                    p_name = name_from_provides(prov)
                     if p_name == 'kernel' or p_name == 'kernel-devel':
                         return True
         return False
@@ -131,7 +142,8 @@ class RuntimeMultilibMethod(MultilibMethod):
         if MultilibMethod.select(self, po):
             return True
         if po.name.startswith('kernel'):
-            for (p_name, p_flag, (p_e, p_v, p_r)) in po.provides:
+            for prov in po.provides:
+                p_name = name_from_provides(prov)
                 if p_name == 'kernel':
                     return False
         for file in po.returnFileEntries():
@@ -224,7 +236,8 @@ class DevelMultilibMethod(RuntimeMultilibMethod):
         if po.name.startswith('ghc-'):
             return False
         if po.name.startswith('kernel'):
-            for (p_name, p_flag, (p_e, p_v, p_r)) in po.provides:
+            for prov in po.provides:
+                p_name = name_from_provides(prov)
                 if p_name == 'kernel-devel':
                     return False
                 if p_name.endswith('-devel') or p_name.endswith('-static'):
